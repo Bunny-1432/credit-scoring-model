@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Model artifacts (large binary files)
+credit_scoring/model/*.pkl
+
+# Generated data (reproducible via data_generator.py)
+credit_scoring/data/*.csv
+
+# Output charts and reports (reproducible via train_evaluate.py)
+credit_scoring/outputs/*.png
+credit_scoring/outputs/*.txt
+credit_scoring/outputs/*.json
+credit_scoring/outputs/*.csv
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
