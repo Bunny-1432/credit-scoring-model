@@ -147,9 +147,41 @@ div[data-testid="stSidebar"] {
 def load_model():
     model_path = MODEL_DIR / "rf_model.pkl"
     feat_path  = MODEL_DIR / "feature_names.pkl"
+
     if not model_path.exists():
-        st.error("Model not found. Please run `python save_model.py` first.")
-        st.stop()
+        import numpy as np
+        from sklearn.model_selection import train_test_split
+        from sklearn.preprocessing import StandardScaler
+        from sklearn.ensemble import RandomForestClassifier
+        from sklearn.pipeline import Pipeline
+        from sklearn.utils.class_weight import compute_class_weight
+        from data_generator import generate_credit_dataset
+
+        with st.spinner("First run: generating data and training model (~15s)..."):
+            MODEL_DIR.mkdir(parents=True, exist_ok=True)
+
+            df = generate_credit_dataset()
+            X, y = build_features(df)
+
+            X_train, _, y_train, _ = train_test_split(
+                X, y, test_size=0.2, random_state=42, stratify=y
+            )
+            classes = np.array([0, 1])
+            weights = compute_class_weight("balanced", classes=classes, y=y_train)
+            cw_dict = dict(zip(classes, weights))
+
+            pipeline = Pipeline([
+                ("scaler", StandardScaler()),
+                ("clf", RandomForestClassifier(
+                    n_estimators=300, max_depth=10, min_samples_leaf=10,
+                    class_weight=cw_dict, n_jobs=-1, random_state=42,
+                )),
+            ])
+            pipeline.fit(X_train, y_train)
+
+            joblib.dump(pipeline, model_path)
+            joblib.dump(list(X.columns), feat_path)
+
     model    = joblib.load(model_path)
     features = joblib.load(feat_path)
     return model, features
