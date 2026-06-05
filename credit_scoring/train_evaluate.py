@@ -1,3 +1,11 @@
+"""
+Credit Risk Model Training & Evaluation Pipeline
+================================================
+This script handles data preprocessing, model training across five classification
+algorithms (Logistic Regression, Decision Tree, Random Forest, XGBoost, LightGBM),
+and comprehensive model evaluation using Precision, Recall, F1-Score, and ROC-AUC.
+Outputs include threshold analysis and feature importance.
+"""
 import warnings
 import json
 from pathlib import Path

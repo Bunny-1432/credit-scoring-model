@@ -1,3 +1,10 @@
+"""
+Credit Risk Feature Engineering
+===============================
+This module extracts meaningful features from raw financial data, focusing on patterns
+in financial behavior. It engineers features that capture income stability, debt burden,
+payment reliability, and financial history trends.
+"""
 import numpy as np
 import pandas as pd
 
@@ -5,6 +12,16 @@ EMPLOYMENT_LABELS = {0: "Unemployed", 1: "Part-time", 2: "Full-time", 3: "Self-e
 
 
 def build_features(df):
+    """
+    Build engineered features for credit risk modeling.
+    
+    Args:
+        df (pd.DataFrame): Raw applicant financial data.
+        
+    Returns:
+        X (pd.DataFrame): The full feature matrix (raw + engineered features).
+        y (pd.Series): The target variable indicating default status.
+    """
     data = df.copy()
 
     data["debt_to_income"] = data["total_debt"] / (data["annual_income"] + 1e-6)
@@ -74,6 +91,13 @@ def build_features(df):
 
 
 def feature_summary():
+    """
+    Returns a descriptive summary of the engineered features, their formulas,
+    and the rationale behind them.
+    
+    Returns:
+        pd.DataFrame: A DataFrame containing the feature metadata.
+    """
     records = [
         ("debt_to_income",        "total_debt / annual_income",              "Core DTI ratio; primary repayment-capacity signal"),
         ("payment_reliability",   "on_time / (on_time + late)",              "6-month on-time payment fraction; recent behaviour"),

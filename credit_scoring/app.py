@@ -2,9 +2,7 @@ import sys
 import numpy as np
 import pandas as pd
 import joblib
-# pyrefly: ignore [missing-import]
 import streamlit as st
-# pyrefly: ignore [missing-import]
 import matplotlib
 matplotlib.use("Agg")
 # pyrefly: ignore [missing-import]
