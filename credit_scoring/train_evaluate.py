@@ -22,6 +22,9 @@ from sklearn.metrics import (
 )
 from sklearn.pipeline import Pipeline
 from sklearn.utils.class_weight import compute_class_weight
+from sklearn.model_selection import RandomizedSearchCV
+from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
 
 warnings.filterwarnings("ignore")
 
@@ -37,6 +40,8 @@ MODEL_COLORS = {
     "Logistic Regression": "#5c9de0",
     "Decision Tree":       "#f0a045",
     "Random Forest":       "#5cb85c",
+    "XGBoost":             "#d35400",
+    "LightGBM":            "#8e44ad",
 }
 
 
@@ -115,6 +120,7 @@ def plot_eda(df):
 
 
 def build_models(class_weights):
+    scale_pos_weight = class_weights[1] / class_weights[0] if 0 in class_weights and 1 in class_weights else 1.0
     return {
         "Logistic Regression": Pipeline([
             ("scaler", StandardScaler()),
@@ -142,6 +148,30 @@ def build_models(class_weights):
                 max_depth=10,
                 min_samples_leaf=10,
                 class_weight=class_weights,
+                n_jobs=-1,
+                random_state=42,
+            )),
+        ]),
+        "XGBoost": Pipeline([
+            ("scaler", StandardScaler()),
+            ("clf", XGBClassifier(
+                n_estimators=300,
+                max_depth=6,
+                learning_rate=0.05,
+                scale_pos_weight=scale_pos_weight,
+                use_label_encoder=False,
+                eval_metric="logloss",
+                n_jobs=-1,
+                random_state=42,
+            )),
+        ]),
+        "LightGBM": Pipeline([
+            ("scaler", StandardScaler()),
+            ("clf", LGBMClassifier(
+                n_estimators=300,
+                max_depth=6,
+                learning_rate=0.05,
+                scale_pos_weight=scale_pos_weight,
                 n_jobs=-1,
                 random_state=42,
             )),
@@ -200,7 +230,10 @@ def plot_pr_curves(results, y_test):
 
 
 def plot_confusion_matrices(results, y_test):
-    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
+    n_models = len(results)
+    fig, axes = plt.subplots(1, n_models, figsize=(5 * n_models, 5))
+    if n_models == 1:
+        axes = [axes]
     fig.suptitle("Confusion Matrices", fontsize=14, fontweight="bold")
     for ax, r in zip(axes, results):
         cm = confusion_matrix(y_test, r["y_pred"])
@@ -241,7 +274,10 @@ def plot_metrics_comparison(results):
 
 
 def plot_feature_importance(feature_names, fitted_models):
-    fig, axes = plt.subplots(1, 3, figsize=(18, 7))
+    n_models = len(fitted_models)
+    fig, axes = plt.subplots(1, n_models, figsize=(6 * n_models, 7))
+    if n_models == 1:
+        axes = [axes]
     fig.suptitle("Feature Importance / Coefficients", fontsize=14, fontweight="bold")
 
     importance_dfs = {}
@@ -357,10 +393,10 @@ def main():
     metrics_df.to_csv(OUTPUT_DIR / "model_metrics.csv", index=False)
     print("      Saved: model_metrics.csv")
 
-    rf_imp = imp_dfs["Random Forest"].reset_index()
+    rf_imp = imp_dfs["XGBoost"].reset_index()
     rf_imp.columns = ["feature", "importance"]
-    rf_imp.to_csv(OUTPUT_DIR / "rf_feature_importance.csv", index=False)
-    print("      Saved: rf_feature_importance.csv")
+    rf_imp.to_csv(OUTPUT_DIR / "xgb_feature_importance.csv", index=False)
+    print("      Saved: xgb_feature_importance.csv")
 
     with open(OUTPUT_DIR / "classification_reports.txt", "w") as f:
         for r in results:

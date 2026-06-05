@@ -5,6 +5,7 @@ from pathlib import Path
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.utils.class_weight import compute_class_weight
 
@@ -27,13 +28,17 @@ def train_and_save():
     weights = compute_class_weight("balanced", classes=classes, y=y_train)
     cw_dict = dict(zip(classes, weights))
 
+    scale_pos_weight = cw_dict[1] / cw_dict[0] if 0 in cw_dict and 1 in cw_dict else 1.0
+
     pipeline = Pipeline([
         ("scaler", StandardScaler()),
-        ("clf", RandomForestClassifier(
+        ("clf", XGBClassifier(
             n_estimators=300,
-            max_depth=10,
-            min_samples_leaf=10,
-            class_weight=cw_dict,
+            max_depth=6,
+            learning_rate=0.05,
+            scale_pos_weight=scale_pos_weight,
+            use_label_encoder=False,
+            eval_metric="logloss",
             n_jobs=-1,
             random_state=42,
         )),
@@ -41,10 +46,10 @@ def train_and_save():
 
     pipeline.fit(X_train, y_train)
 
-    joblib.dump(pipeline, MODEL_DIR / "rf_model.pkl")
+    joblib.dump(pipeline, MODEL_DIR / "xgb_model.pkl")
     joblib.dump(list(X.columns), MODEL_DIR / "feature_names.pkl")
 
-    print(f"Model saved to {MODEL_DIR / 'rf_model.pkl'}")
+    print(f"Model saved to {MODEL_DIR / 'xgb_model.pkl'}")
     print(f"Features: {list(X.columns)}")
 
 if __name__ == "__main__":

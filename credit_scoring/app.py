@@ -2,9 +2,12 @@ import sys
 import numpy as np
 import pandas as pd
 import joblib
+# pyrefly: ignore [missing-import]
 import streamlit as st
+# pyrefly: ignore [missing-import]
 import matplotlib
 matplotlib.use("Agg")
+# pyrefly: ignore [missing-import]
 import matplotlib.pyplot as plt
 from pathlib import Path
 
@@ -145,14 +148,14 @@ div[data-testid="stSidebar"] {
 
 @st.cache_resource
 def load_model():
-    model_path = MODEL_DIR / "rf_model.pkl"
+    model_path = MODEL_DIR / "xgb_model.pkl"
     feat_path  = MODEL_DIR / "feature_names.pkl"
 
     if not model_path.exists():
         import numpy as np
         from sklearn.model_selection import train_test_split
         from sklearn.preprocessing import StandardScaler
-        from sklearn.ensemble import RandomForestClassifier
+        from xgboost import XGBClassifier
         from sklearn.pipeline import Pipeline
         from sklearn.utils.class_weight import compute_class_weight
         from data_generator import generate_credit_dataset
@@ -169,12 +172,15 @@ def load_model():
             classes = np.array([0, 1])
             weights = compute_class_weight("balanced", classes=classes, y=y_train)
             cw_dict = dict(zip(classes, weights))
+            
+            scale_pos_weight = cw_dict[1] / cw_dict[0] if 0 in cw_dict and 1 in cw_dict else 1.0
 
             pipeline = Pipeline([
                 ("scaler", StandardScaler()),
-                ("clf", RandomForestClassifier(
-                    n_estimators=300, max_depth=10, min_samples_leaf=10,
-                    class_weight=cw_dict, n_jobs=-1, random_state=42,
+                ("clf", XGBClassifier(
+                    n_estimators=300, max_depth=6, learning_rate=0.05,
+                    scale_pos_weight=scale_pos_weight, use_label_encoder=False,
+                    eval_metric="logloss", n_jobs=-1, random_state=42,
                 )),
             ])
             pipeline.fit(X_train, y_train)
@@ -283,7 +289,7 @@ def build_input_row(inputs):
 model, feature_names = load_model()
 
 st.markdown("## 💳 Credit Risk Scorer")
-st.markdown("<p style='color:#8892a4;margin-top:-12px;'>Real-time applicant credit risk assessment powered by Random Forest</p>", unsafe_allow_html=True)
+st.markdown("<p style='color:#8892a4;margin-top:-12px;'>Real-time applicant credit risk assessment powered by XGBoost</p>", unsafe_allow_html=True)
 st.markdown("---")
 
 with st.sidebar:
@@ -436,6 +442,6 @@ with st.expander("🔬 View Raw Feature Vector"):
 
 st.markdown("""
 <div style="text-align:center;color:#3d4455;font-size:12px;margin-top:24px;">
-    Credit Risk Scorer &nbsp;|&nbsp; Random Forest (AUC = 0.82) &nbsp;|&nbsp; Optimal threshold = 0.45
+    Credit Risk Scorer &nbsp;|&nbsp; XGBoost Model &nbsp;|&nbsp; Optimal threshold configured
 </div>
 """, unsafe_allow_html=True)

@@ -30,6 +30,10 @@ def build_features(df):
 
     data["age_credit_experience"] = data["age"] * data["credit_maturity"] / 100.0
 
+    data["savings_to_debt"] = data["savings_balance"] / (data["total_debt"] + 1e-6)
+
+    data["income_per_age"] = data["annual_income"] / (data["age"] + 1e-6)
+
     raw_features = [
         "age",
         "annual_income",
@@ -58,6 +62,8 @@ def build_features(df):
         "credit_maturity",
         "debt_per_account",
         "age_credit_experience",
+        "savings_to_debt",
+        "income_per_age",
     ]
 
     all_features = raw_features + engineered_features
@@ -79,5 +85,7 @@ def feature_summary():
         ("credit_maturity",       "log1p(credit_history_months)",            "Log-scaled credit history length"),
         ("debt_per_account",      "total_debt / (num_accounts + 1)",         "Average debt burden per open account"),
         ("age_credit_experience", "age x credit_maturity / 100",             "Interaction: age + sustained credit history"),
+        ("savings_to_debt",       "savings_balance / total_debt",            "Ratio of savings to total debt"),
+        ("income_per_age",        "annual_income / age",                     "Annual income relative to age"),
     ]
     return pd.DataFrame(records, columns=["Feature", "Formula", "Rationale"])
